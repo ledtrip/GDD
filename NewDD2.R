@@ -79,7 +79,7 @@ for (T_l in T_l_values) {
   }
 }
 
-write_csv(gdd_results, "Outputs/GDD_VariedThresholds2.csv")
+# write_csv(gdd_results, "Outputs/GDD_VariedThresholds2.csv") # Seba: i deactivated this because the csv is too large and messes the push to GitHub
 print("✅ GDD data for varied thresholds saved to 'Outputs/GDD_VariedThresholds2.csv'")
 
 # ✅ Extract GDD values at heading for each variety using varied thresholds
