@@ -230,18 +230,18 @@ print("✅ Error analysis saved separately for PRISM and Station comparisons.")
 
 
 # ✅ Load Error Analysis Data
-df_prism <- read_csv("Outputs/Error_Analysis_Local_vs_PRISM.csv", na = c("", "NA"))
-df_station <- read_csv("Outputs/Error_Analysis_Local_vs_Station.csv", na = c("", "NA"))
+df_prism <- read_csv("Outputs/Error_Analysis_Local_vs_PRISM_2.csv", na = c("", "NA"))
+df_station <- read_csv("Outputs/Error_Analysis_Local_vs_Station_2.csv", na = c("", "NA"))
 
 # ✅ Function to Find Best Parameters Based on RMSE Only
 find_best_params_rmse <- function(df, comparison_type) {
   df_best <- df %>%
     filter(!is.na(RMSE)) %>%  # Remove NAs to prevent sorting errors
-    group_by(Variety, Location, Year) %>%
+    group_by(Variety, Location) %>% # Seba: previous to modification:     group_by(Variety, Location, Year) %>%
     arrange(RMSE, .by_group = TRUE) %>%  # Sort by RMSE within each group
     slice(1) %>%  # Select the best row
     ungroup() %>%
-    select(Variety, Location, Year, T_l, T_opt, RMSE, MBE, MAE) %>%
+    select(Variety, Location, T_l, T_opt, RMSE, MBE, MAE) %>% # Seba: previous to modification: select(Variety, Location, Year, T_l, T_opt, RMSE, MBE, MAE)
     mutate(Comparison = comparison_type, Approach = "RMSE Only")
   
   return(df_best)
@@ -251,7 +251,7 @@ find_best_params_rmse <- function(df, comparison_type) {
 find_best_params_balanced <- function(df, comparison_type) {
   df_best <- df %>%
     filter(!is.na(RMSE) & !is.na(MAE) & !is.na(MBE)) %>%  # Remove rows with NAs
-    group_by(Variety, Location, Year) %>%
+    group_by(Variety, Location) %>% # Seba: removed Year as it conflicts with modified nested loops
     
     # Seba: lines added assuming you're aiming at min(MSE + MAE + MBE) as a criteria to find the best parameters
     mutate(sum_RMSE_MAE_MBE = RMSE + MAE + abs(MBE)) %>% 
@@ -260,7 +260,7 @@ find_best_params_balanced <- function(df, comparison_type) {
     # arrange(RMSE, MAE, abs(MBE), .by_group = TRUE) %>%  # Sort with RMSE first, then MAE, then absolute MBE - Seba: replaced for previous arrange
     slice(1) %>%  # Select the best row
     ungroup() %>%
-    select(Variety, Location, Year, T_l, T_opt, RMSE, MBE, MAE, sum_RMSE_MAE_MBE) %>%
+    select(Variety, Location, T_l, T_opt, RMSE, MBE, MAE, sum_RMSE_MAE_MBE) %>% # Seba: removed Year as it conflicts with modified nested loops
     mutate(Comparison = comparison_type, Approach = "RMSE + MAE + MBE")
   
   return(df_best)
