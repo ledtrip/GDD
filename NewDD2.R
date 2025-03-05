@@ -151,19 +151,6 @@ compute_mae <- function(predicted, observed) {
   mean(abs(valid_data$predicted - valid_data$observed), na.rm = TRUE)
 }
 
-# Seba's edit 1: mean(GDD) through years ####
-
-# Seba: I am creating here a second version of the gdd_heading_results data frame aggregating by each each Variety-Location-T_l-T_opt combination
-# (excluding Year) and then calculating the mean GDD (so I use all the GDD values calculated through the years and average them) for all three 
-# methods (Local, PRISM, Station). Averaged days to heading is just extra information but I guess you won't need it for the GDD analysis.
-
-# gdd_heading_results_agg <- gdd_heading_results %>% 
-#   group_by(Variety, Location, T_l, T_opt) %>% 
-#   summarise(mean_Local_Cumulative_GDD = mean(Local_Cumulative_GDD),
-#             mean_PRISM_Cumulative_GDD = mean(PRISM_Cumulative_GDD),
-#             mean_Stat_Cumulative_GDD = mean(Stat_Cumulative_GDD),
-#             mean_DaysToHeading = mean(DaysToHeading))
-
 # ✅ Initialize Separate DataFrames for PRISM and Station Comparisons
 error_results_prism <- data.frame()
 error_results_station <- data.frame()
