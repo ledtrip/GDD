@@ -3,7 +3,7 @@ library(readr)
 library(stats)
 
 # Load dataset (Update file path)
-df <- read_csv("/Users/lewisdaniel/R Folder/UCDavis/Data/MasterTemp2024_processed.csv", na = c("", "NA"))
+df <- read_csv("Outputs/MasterTemp2024_processed.csv", na = c("", "NA")) # Seba: changed so it doesn't depend on local file directory but on the project's
 
 # ✅ Exclude Specific Location-Year Pairs
 df <- df %>%
@@ -28,7 +28,7 @@ df <- df %>%
   )
 
 # Ensure the Outputs folder exists
-output_dir <- "/Users/lewisdaniel/R Folder/UCDavis/Outputs"
+output_dir <- "Outputs" # Seba: changed so it doesn't depend on local file directory but on the project's
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 # ✅ Function to calculate GDD
@@ -50,13 +50,18 @@ calculate_gdd <- function(df, min_temp_col, max_temp_col, source_name, T_l, T_op
   return(df)
 }
 
+# ✅ Define varieties with heading data  # Seba: moved this here because it's needed for following loop
+varieties <- c("HeadM105_DaysToHeading", "HeadM206_DaysToHeading", 
+               "HeadM209_DaysToHeading", "HeadM210_DaysToHeading", 
+               "HeadM211_DaysToHeading", "HeadM401_DaysToHeading")
+
 # ✅ Step 1: **Loop through different T_l and T_opt threshold values**
 T_l_values <- seq(10, 20, by = 1)   # Test lower thresholds
 T_opt_values <- seq(25, 40, by = 1)  # Test upper thresholds
 
 gdd_results <- data.frame()
 
-for (T_l in T_l_values) {
+for (T_l in T_l_values) { 
   for (T_opt in T_opt_values) {
     
     print(sprintf("🔍 Testing T_l = %.1f, T_opt = %.1f", T_l, T_opt))
@@ -76,11 +81,6 @@ for (T_l in T_l_values) {
 
 write_csv(gdd_results, "Outputs/GDD_VariedThresholds2.csv")
 print("✅ GDD data for varied thresholds saved to 'Outputs/GDD_VariedThresholds2.csv'")
-
-# ✅ Define varieties with heading data
-varieties <- c("HeadM105_DaysToHeading", "HeadM206_DaysToHeading", 
-               "HeadM209_DaysToHeading", "HeadM210_DaysToHeading", 
-               "HeadM211_DaysToHeading", "HeadM401_DaysToHeading")
 
 # ✅ Extract GDD values at heading for each variety using varied thresholds
 gdd_heading_results <- data.frame()
@@ -151,6 +151,19 @@ compute_mae <- function(predicted, observed) {
   mean(abs(valid_data$predicted - valid_data$observed), na.rm = TRUE)
 }
 
+# Seba's edit 1: mean(GDD) through years ####
+
+# Seba: I am creating here a second version of the gdd_heading_results data frame aggregating by each each Variety-Location-T_l-T_opt combination
+# (excluding Year) and then calculating the mean GDD (so I use all the GDD values calculated through the years and average them) for all three 
+# methods (Local, PRISM, Station). Averaged days to heading is just extra information but I guess you won't need it for the GDD analysis.
+
+# gdd_heading_results_agg <- gdd_heading_results %>% 
+#   group_by(Variety, Location, T_l, T_opt) %>% 
+#   summarise(mean_Local_Cumulative_GDD = mean(Local_Cumulative_GDD),
+#             mean_PRISM_Cumulative_GDD = mean(PRISM_Cumulative_GDD),
+#             mean_Stat_Cumulative_GDD = mean(Stat_Cumulative_GDD),
+#             mean_DaysToHeading = mean(DaysToHeading))
+
 # ✅ Initialize Separate DataFrames for PRISM and Station Comparisons
 error_results_prism <- data.frame()
 error_results_station <- data.frame()
@@ -159,12 +172,12 @@ for (var in varieties) {
   df_variety <- gdd_heading_results %>%
     filter(Variety == var)  # Filter for specific variety
   
-  for (yr in unique(df_variety$Year)) {
-    df_year <- df_variety %>%
-      filter(Year == yr)  # Filter for specific year
+  # for (yr in unique(df_variety$Year)) { # Seba: I'm removing this loop so the error functions (e.g. compute_mbe) use all years' GDD as data to calculate
+  #   df_year <- df_variety %>%
+  #     filter(Year == yr)  # Filter for specific year
     
-    for (loc in unique(df_year$Location)) {
-      df_location <- df_year %>%
+    for (loc in unique(df_variety$Location)) { # Seba: previous to modification:     for (loc in unique(df_year$Location)) { 
+      df_location <- df_variety %>% # Seba: previous to modification: df_location <- df_year 
         filter(Location == loc)  # Filter for specific location
       
       for (tl_val in unique(df_location$T_l)) {  
@@ -192,32 +205,38 @@ for (var in varieties) {
           
           # ✅ Store results for PRISM comparison
           error_results_prism <- bind_rows(error_results_prism, 
-                                           data.frame(Variety = var, Location = loc, Year = yr, 
-                                                      DaysToHeading = DaysToHeading_value, T_l = tl_val, T_opt = topt_val,
-                                                      Local_Cumulative_GDD = Local_GDD_value, PRISM_Cumulative_GDD = PRISM_GDD_value,
+                                           data.frame(Variety = var, Location = loc,  # Seba: prev.: data.frame(Variety = var, Location = loc, Year = yr, 
+                                                      # DaysToHeading = DaysToHeading_value, # Seba: removed 
+                                                      T_l = tl_val, T_opt = topt_val,
+                                                      # Local_Cumulative_GDD = Local_GDD_value, PRISM_Cumulative_GDD = PRISM_GDD_value, # Seba: removed 
                                                       Comparison = "Local vs PRISM", 
                                                       RMSE = as.numeric(rmse_local_prism), 
                                                       MBE = as.numeric(mbe_local_prism), 
-                                                      MAE = as.numeric(mae_local_prism)))
+                                                      MAE = as.numeric(mae_local_prism))) 
           
           # ✅ Store results for Station comparison
           error_results_station <- bind_rows(error_results_station, 
-                                             data.frame(Variety = var, Location = loc, Year = yr, 
-                                                        DaysToHeading = DaysToHeading_value, T_l = tl_val, T_opt = topt_val,
-                                                        Local_Cumulative_GDD = Local_GDD_value, Stat_Cumulative_GDD = Stat_GDD_value,
+                                             data.frame(Variety = var, Location = loc, # Seba: prev.: data.frame(Variety = var, Location = loc, Year = yr,
+                                                        # DaysToHeading = DaysToHeading_value, # Seba: removed 
+                                                        T_l = tl_val, T_opt = topt_val,
+                                                        # Local_Cumulative_GDD = Local_GDD_value, Stat_Cumulative_GDD = Stat_GDD_value, # Seba: removed 
                                                         Comparison = "Local vs Station", 
                                                         RMSE = as.numeric(rmse_local_station), 
                                                         MBE = as.numeric(mbe_local_station), 
-                                                        MAE = as.numeric(mae_local_station)))
+                                                        MAE = as.numeric(mae_local_station))) 
         }
       }
     }
   }
-}
+# } # Seba: removed, as Year loop was removed
 
 # ✅ Save error analysis results separately
-write_csv(error_results_prism, "Outputs/Error_Analysis_Local_vs_PRISM.csv")
-write_csv(error_results_station, "Outputs/Error_Analysis_Local_vs_Station.csv")
+# write_csv(error_results_prism, "Outputs/Error_Analysis_Local_vs_PRISM.csv") # Seba: these I used to store calculations before modifications
+# write_csv(error_results_station, "Outputs/Error_Analysis_Local_vs_Station.csv")
+
+write_csv(error_results_prism, "Outputs/Error_Analysis_Local_vs_PRISM_2.csv") # Seba: these are calculations after modifications.
+write_csv(error_results_station, "Outputs/Error_Analysis_Local_vs_Station_2.csv") # Seba: these are calculations after modifications.
+
 
 print("✅ Error analysis saved separately for PRISM and Station comparisons.")
 
@@ -246,10 +265,15 @@ find_best_params_balanced <- function(df, comparison_type) {
   df_best <- df %>%
     filter(!is.na(RMSE) & !is.na(MAE) & !is.na(MBE)) %>%  # Remove rows with NAs
     group_by(Variety, Location, Year) %>%
-    arrange(RMSE, MAE, abs(MBE), .by_group = TRUE) %>%  # Sort with RMSE first, then MAE, then absolute MBE
+    
+    # Seba: lines added assuming you're aiming at min(MSE + MAE + MBE) as a criteria to find the best parameters
+    mutate(sum_RMSE_MAE_MBE = RMSE + MAE + abs(MBE)) %>% 
+    arrange(sum_RMSE_MAE_MBE, .by_group = TRUE) %>% 
+    
+    # arrange(RMSE, MAE, abs(MBE), .by_group = TRUE) %>%  # Sort with RMSE first, then MAE, then absolute MBE - Seba: replaced for previous arrange
     slice(1) %>%  # Select the best row
     ungroup() %>%
-    select(Variety, Location, Year, T_l, T_opt, RMSE, MBE, MAE) %>%
+    select(Variety, Location, Year, T_l, T_opt, RMSE, MBE, MAE, sum_RMSE_MAE_MBE) %>%
     mutate(Comparison = comparison_type, Approach = "RMSE + MAE + MBE")
   
   return(df_best)

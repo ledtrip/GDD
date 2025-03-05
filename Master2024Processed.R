@@ -6,7 +6,7 @@ library(tidyr)      # For handling missing values efficiently
 library(stringr)
 
 # Read the CSV file
-df <- read_csv("/Users/lewisdaniel/R Folder/UCDavis/Data/MasterTemp2024.csv", na = c("", "NA"))
+df <- read_csv("Data/MasterTemp2024.csv", na = c("", "NA")) # Seba: changed so it doesn't depend on local file directory but on the project's
 
 # Convert Date and Plant_Date to Date format
 df <- df %>%
@@ -83,7 +83,7 @@ calculate_days_to_head <- function(data) {
 df <- calculate_days_to_head(df)
 
 # Ensure the Outputs folder exists
-output_dir <- "/Users/lewisdaniel/R Folder/UCDavis/Outputs"
+output_dir <- "Outputs" # Seba: changed so it doesn't depend on local file directory but on the project's
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 # Save the processed data in the Outputs folder
