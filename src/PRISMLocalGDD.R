@@ -7,7 +7,7 @@
 # ===============================================================
 
 # ---- Working directory ----
-setwd("/Users/lewisdaniel/R Folder/LinquistLab/PRISMLocalGDD")
+# setwd("/Users/lewisdaniel/R Folder/LinquistLab/PRISMLocalGDD") # Seba: not necessary when workin as Version Control Project
 
 suppressPackageStartupMessages({
   library(tidyverse); library(glue); library(readr); library(purrr)
